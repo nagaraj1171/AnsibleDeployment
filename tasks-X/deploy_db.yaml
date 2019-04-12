@@ -1,0 +1,35 @@
+- name: Install DB repo
+  yum:
+    name: ['https://centos7.iuscommunity.org/ius-release.rpm', 'https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm']
+    state: present
+- name: Install all required dependencies on DB Server
+  yum:
+    name: ['python36u','python36u-pip','python36u-devel', 'mysql-server', 'MySQL-python']
+    state: present
+- name: Start MySQL,httd Service
+  service:
+    name: "mysqld"
+    state: started
+    enabled: yes
+
+- name: get MySQL root user password
+  shell: "grep 'A temporary password is generated for root@localhost' /var/log/mysqld.log | awk -F ' ' '{print $(NF)}'"
+  register: root_password
+
+- name: update expired root user password
+  command: mysql --user root --password="{{ root_password.stdout }}"  --connect-expired-password --execute="ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ admin_user_password }}'"
+
+- name: Create a new database with name 'employee_db'
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: "{{ admin_user }}"
+    login_password: "{{ admin_user_password }}"
+- name: Create Database user
+  mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_user_password }}"
+    priv: '*.*:ALL'
+    state: present
+    login_user: "{{ admin_user }}"
+    login_password: "{{ admin_user_password }}"

@@ -1,0 +1,28 @@
+- name: Install repo
+  yum:
+    name: ['https://centos7.iuscommunity.org/ius-release.rpm', 'https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm']
+    state: present
+
+- name: Install all required dependencies
+  yum:
+    name: ['python36u','python36u-pip','python36u-devel', 'wget', 'MySQL-python', 'httpd']
+    state: present
+- name: Start MySQL,httd Service
+  service:
+    name: "httpd"
+    state: started
+    enabled: yes
+
+- name: Install required Python libraries
+  pip:
+    name: ["flask", "flask-mysql"]
+    state: present
+    executable: pip3.6
+
+- name: Copy source code
+  copy:
+    src: /Users/nagbhat/Desktop/dev/ansible/app.py
+    dest: /opt/app.py
+
+- name: Start web server
+  shell: FLASK_APP=/opt/app.py nohup flask run --host=0.0.0.0 &

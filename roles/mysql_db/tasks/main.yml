@@ -1,0 +1,50 @@
+---
+  - name: Install DB repo
+    yum:
+      name: ['https://centos7.iuscommunity.org/ius-release.rpm', 'https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm']
+      state: present
+    tags:
+      - install_req
+
+  - name: Install all required dependencies on DB Server
+    yum:
+      name: 'mysql-server'
+      state: present
+      check: yes
+
+  - name: Start MySQL,httd Service
+    service:
+      name: "mysqld"
+      state: started
+      enabled: yes
+
+
+  - name: get MySQL root user password
+    shell: "grep 'A temporary password is generated for root@localhost' /var/log/mysqld.log | awk -F ' ' '{print $(NF)}'"
+    register: root_password
+    args:
+      warn: False
+
+  - name: update root user password
+    command: mysql --user root --password="{{ root_password.stdout }}"  --connect-expired-password --execute="ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ admin_user_password }}'"
+    ignore_errors: yes
+
+  # - name: Fail task when the command error output prints FAILED
+  # command: /usr/bin/example-command -x -y -z
+  # register: command_result
+  # failed_when: "'FAILED' in command_result.stderr"
+
+  - name: Create a new database with name 'employee_db'
+    mysql_db:
+      name: "{{ db_name }}"
+      state: present
+      login_user: "{{ admin_user }}"
+      login_password: "{{ admin_user_password }}"
+  - name: Create Database user
+    mysql_user:
+      name: "{{ db_user }}"
+      password: "{{ db_user_password }}"
+      priv: '*.*:ALL'
+      state: present
+      login_user: "{{ admin_user }}"
+      login_password: "{{ admin_user_password }}"

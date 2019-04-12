@@ -1,0 +1,6 @@
+ansible_user: root
+db_name: employee_db
+db_user: db_user1
+db_user_password: "2Tdcfg8et$"
+admin_user: root
+admin_user_password: "2Targ8et$"

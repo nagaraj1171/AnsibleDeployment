@@ -1,0 +1,65 @@
+- name: Deploy a web application
+  hosts: db_and_web_server
+
+  tasks:
+    - name: Install repo
+      yum:
+        name: ['https://centos7.iuscommunity.org/ius-release.rpm', 'https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm']
+        state: present
+
+
+    - name: Install all required dependencies
+      yum:
+        name: ['python36u','python36u-pip','python36u-devel', 'wget', 'mysql-server', 'MySQL-python', 'httpd']
+        state: present
+
+    - name: Start MySQL,httd Service
+      service:
+        name: "mysqld"
+        state: started
+        enabled: yes
+
+    - name: Start MySQL,httd Service
+      service:
+        name: "httpd"
+        state: started
+        enabled: yes
+
+    - name: get root password
+      shell: "grep 'A temporary password is generated for root@localhost' /var/log/mysqld.log | awk -F ' ' '{print $(NF)}'"
+      register: root_password
+
+    - name: update expired root user password
+      command: mysql --user root --password="{{ root_password.stdout }}"  --connect-expired-password --execute="ALTER USER 'root'@'localhost' IDENTIFIED BY '2Targ8et$'"
+
+    - name: Install required Python libraries
+      pip:
+        name: ["flask", "flask-mysql"]
+        state: present
+        executable: pip3.6
+
+
+    - name: Create a new database with name 'employee_db'
+      mysql_db:
+        name: employee_db
+        state: present
+        login_user: root
+        login_password: "2Targ8et$"
+
+
+    - name: Create Database user
+      mysql_user:
+        name: db_user
+        password: "2Tdcfg8et$"
+        priv: '*.*:ALL'
+        state: present
+        login_user: root
+        login_password: "2Targ8et$"
+
+    - name: Copy source code
+      copy:
+        src: /Users/nagbhat/Desktop/dev/ansible/app.py
+        dest: /opt/app.py
+
+    - name: Start web server
+      shell: FLASK_APP=/opt/app.py nohup flask run --host=0.0.0.0 &

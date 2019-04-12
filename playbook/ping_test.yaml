@@ -1,0 +1,9 @@
+-
+  #ansible db_and_web_server -i inventory_file.txt -m ping
+  name: Am in an Adult or a Child
+  hosts: db_and_web_server
+  user: root
+  tasks:
+    -
+      name: Testing Ping!
+      ping:
